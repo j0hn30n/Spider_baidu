@@ -49,7 +49,7 @@ def get_site(key_word, hack_url, hack_page):
             site = list(set(sites))  #利用set实现去重
     else:
         for i in range(hack_page):
-            print "The google hacking page %d" % i+1
+            print "The google hacking page %d" % i
             pn = i * 10
             url = "http://www.baidu.com.cn/s?wd=" + key_word + ":" + key + "&cl=3&pn=%s" % pn
             response = requests.get(url).content
