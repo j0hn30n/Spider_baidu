@@ -24,7 +24,6 @@ from bs4 import BeautifulSoup
 def get_html_bs(html_content):
     domains = []
     break_html = html_content
-
     soup = BeautifulSoup(break_html,"html.parser")
     div_text = soup.find_all(attrs={'class':'f13'})
     for text in div_text:
@@ -39,14 +38,24 @@ def get_site(key_word, hack_url, hack_page):
     sites = []
     if hack_page == 0:
         hack_page = 10
-    for i in range(hack_page):
-        print "The google hacking page %d" % i
-        pn = i * 10
-        url = "http://www.baidu.com.cn/s?wd=" + key_word + ":" + key + "&cl=3&pn=%s" % pn
-        response = requests.get(url).content
-        subdomains = get_html_bs(response)
-        sites += list(subdomains)  #将每个界面的十个URL添加到sites中去
-        site = list(set(sites))  #利用set实现去重
+    if key_word == "site":
+        for i in range(hack_page):
+            print "The google hacking page %d" % i
+            pn = i * 10
+            url = "http://www.baidu.com.cn/s?wd=" + key_word + ":" + key + "&cl=3&pn=%s" % pn
+            response = requests.get(url).content
+            subdomains = get_html_bs(response)
+            sites += list(subdomains)  #将每个界面的十个URL添加到sites中去
+            site = list(set(sites))  #利用set实现去重
+    else:
+        for i in range(hack_page):
+            print "The google hacking page %d" % i+1
+            pn = i * 10
+            url = "http://www.baidu.com.cn/s?wd=" + key_word + ":" + key + "&cl=3&pn=%s" % pn
+            response = requests.get(url).content
+            subdomains = getUrlOfBsToInurlKeyword(response)
+            sites += list(subdomains)  #将每个界面的十个URL添加到sites中去
+            site = list(set(sites))  #利用set实现去重
 
     for i in site:
         print i
@@ -58,16 +67,27 @@ def getUrlOfBsToInurlKeyword(html_content):
     soup = BeautifulSoup(break_html,"html.parser")
     div_text = soup.find_all(attrs={'class':'f13'})
     for text in div_text:
-        # print text
-        a_text = text.find('a')
-        # print a_text['href']  #获取a标签内的href
-        resultOfHref = unicode(a_text['href'])  # 将NavigableString转为unicode
-        url_result = get_realUrl(resultOfHref)  #获取真实的URL地址
-        domains.append(url_result)
+        try:
+            a_text = text.find('a')
+            resultOfHref = unicode(a_text['href'])  # 将NavigableString转为unicode
+        except TypeError as e:
+            continue
+        if "baidu.com" in resultOfHref:
+            url_result = get_realUrl(resultOfHref)  #获取真实的URL地址
+            domains.append(url_result)
+        else:
+            continue
     return domains
 
 def get_realUrl(url):
-    real_url = requests.get(url.rstrip())  #rstrip()删除编码字符串末尾的空格
+    try:
+        real_url = requests.get(url.rstrip(),timeout=10)  #rstrip()删除编码字符串末尾的空格
+    except requests.exceptions.ConnectionError as e:
+        return
+    except requests.exceptions.ReadTimeout as e:
+        return
+    except requests.exceptions.TooManyRedirects as e:
+        return
     return real_url.url
 
 
@@ -105,7 +125,6 @@ def main(argv):
     if page == None:
         page = 10
     get_site(keyword, url, page)
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])
